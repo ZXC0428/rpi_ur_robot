@@ -5,49 +5,51 @@ from control.motion_commands import URScriptGenerator
 from control.rg_control import RGGrab, Point_triangle, Point0, RGRelease, RGdown
 
 # 設定樹梅派的 GPIO 腳位編號 (BOARD 編號)
-BUTTON_PIN = 16  # 實體排針第 16 針
+BUTTON_PIN = 18  # 你目前使用的腳位
 
 def button_callback(channel, control_module):
-    print(f"--- GPIO 偵測到訊號！(Channel: {channel}) ---")
-    print("正在執行抓取動作...")
+    print("\n--- [GPIO 訊號觸發] ---")
     try:
         result = control_module.handle_command("grab")
-        print(f"控制模組回傳結果: {result}")
+        print(f"執行結果: {result}")
     except Exception as e:
-        print(f"執行指令時發生錯誤: {e}")
+        print(f"執行出錯: {e}")
 
 def start_button_listener(control_module):
-    """
-    初始化 GPIO，設定按鈕輸入，並啟動按鈕事件偵測。
-    control_module：已初始化的控制層實例，用於執行抓取指令。
-    """
-    print(f"正在啟動按鈕監聽... (腳位: {BUTTON_PIN}, 模式: BOARD)")
-    GPIO.setwarnings(True) # 開啟警告以獲取更多資訊
+    import RPi.GPIO as GPIO
+    import time
+    
+    print(f"\n[系統訊息] 正在啟動實體按鈕監聽器... (Pin {BUTTON_PIN})")
+    
+    GPIO.setwarnings(False)
+    
+    # 強制清理該腳位，解決 'Failed to add edge detection' 的關鍵
     try:
-        GPIO.setmode(GPIO.BOARD)
-    except Exception as e:
-        print(f"設定模式時發生提示 (可能已設定): {e}")
-
-    # 設定 BUTTON_PIN 為輸入，並使用上拉電阻
-    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    print(f"腳位 {BUTTON_PIN} 設定完成，當前電位狀態: {GPIO.input(BUTTON_PIN)}")
-
-    # 清理舊的偵測器
-    try:
+        GPIO.setup(BUTTON_PIN, GPIO.IN)
         GPIO.remove_event_detect(BUTTON_PIN)
     except:
         pass
 
-    sleep(0.2)
-
-    # 當檢測到按鈕按下 (FALLING 邊緣) 時呼叫 button_callback
     try:
+        GPIO.setmode(GPIO.BOARD)
+    except:
+        pass
+
+    # 重新設定為輸入 + 上拉電阻
+    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    
+    # 增加延遲讓系統反應
+    time.sleep(0.3)
+
+    try:
+        # 將 bouncetime 稍微調高，避免雜訊觸發
         GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING,
-                              callback=lambda channel: button_callback(channel, control_module),
-                              bouncetime=500)
-        print("邊緣偵測 (Edge Detection) 已成功掛載。")
+                              callback=lambda ch: button_callback(ch, control_module),
+                              bouncetime=800)
+        print(f"[成功] Pin {BUTTON_PIN} 監聽已掛載。")
     except Exception as e:
-        print(f"無法添加邊緣偵測: {e}")
+        print(f"[嚴重錯誤] 無法監聽 Pin {BUTTON_PIN}: {e}")
+        print("請嘗試：1. 換一個腳位 (如 16)  2. 執行 'sudo pkill -f python'")
 
     def loop():
         while True:
