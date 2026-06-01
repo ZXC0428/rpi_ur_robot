@@ -32,7 +32,10 @@ _initialized_pins = set()
 
 def init_gpio_once(gpio):
     if gpio not in _initialized_pins:
-        GPIO.setmode(GPIO.BOARD)
+        try:
+            GPIO.setmode(GPIO.BOARD)
+        except Exception:
+            pass # 模式可能已經由其他模組設定過
         GPIO.setup(gpio, GPIO.OUT)
         _initialized_pins.add(gpio)
 
