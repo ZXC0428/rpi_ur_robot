@@ -29,13 +29,18 @@ import time
 import RPi.GPIO as GPIO
 
 _initialized_pins = set()
+_mode_set = False
 
 def init_gpio_once(gpio):
-    if gpio not in _initialized_pins:
+    global _mode_set
+    if not _mode_set:
         try:
             GPIO.setmode(GPIO.BOARD)
-        except Exception:
-            pass # 模式可能已經由其他模組設定過
+            _mode_set = True
+        except Exception as e:
+            print(f"GPIO setmode error: {e}")
+    
+    if gpio not in _initialized_pins:
         GPIO.setup(gpio, GPIO.OUT)
         _initialized_pins.add(gpio)
 

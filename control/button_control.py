@@ -18,7 +18,11 @@ def start_button_listener(control_module):
     control_module：已初始化的控制層實例，用於執行抓取指令。
     """
     GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)
+    try:
+        GPIO.setmode(GPIO.BOARD)
+    except Exception:
+        pass
+
     # 設定 BUTTON_PIN 為輸入，並使用上拉電阻
     GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
@@ -28,10 +32,16 @@ def start_button_listener(control_module):
     except:
         pass
 
+    # 加入一點延遲確保硬體穩定
+    sleep(0.1)
+
     # 當檢測到按鈕按下 (FALLING 邊緣) 時呼叫 button_callback
-    GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING,
-                          callback=lambda channel: button_callback(channel, control_module),
-                          bouncetime=300)
+    try:
+        GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING,
+                              callback=lambda channel: button_callback(channel, control_module),
+                              bouncetime=500)
+    except Exception as e:
+        print(f"無法添加邊緣偵測: {e}")
     
     # 為確保程式持續運行，此處啟動一個 daemon 線程作為監聽保持
     def loop():
