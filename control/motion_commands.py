@@ -51,7 +51,7 @@ class URScriptGenerator:
         生成抓取動作的 URScript 指令：下降
         """
         command = f"""
-        movel(pose_trans(get_actual_tcp_pose(), p[0, 0, 0.1, 0, 0, 0]), {self.acceleration}, {self.speed})
+        movel(pose_trans(get_actual_tcp_pose(), p[0, 0, 0.15, 0, 0, 0]), {self.acceleration}, {self.speed})
         """
         return command
 
